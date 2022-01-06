@@ -29,9 +29,9 @@ const getRandomAnswer = () => {
 function App() {
   return (
     <Routes>
-      <Route path="word-master" element={<Layout />}>
+      <Route path="/word-master" element={<Layout />}>
         <Route index element={<RandomPuzzle />} />
-        <Route path=":answerXor" element={<Puzzle />} />
+        <Route path="/word-master/:answerXor" element={<Puzzle />} />
         <Route
           path="404"
           element={
