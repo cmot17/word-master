@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { Routes, Route, Outlet, useParams, useNavigate } from 'react-router-dom'
-import { rot13 } from 'simple-cipher-js'
-import { letters, status } from './constants'
+import Encrypt from 'ciphervgnr'
+import { letters, status, cipherKey } from './constants'
 import { Keyboard } from './Keyboard'
 import answers from './data/answers'
 import words from './data/words'
@@ -128,7 +128,7 @@ function RandomPuzzle() {
   let navigate = useNavigate()
   let answer = getRandomAnswer()
   useEffect(() => {
-    navigate('/' + rot13.encrypt(answer))
+    navigate('/' + Encrypt(answer, cipherKey))
   })
   return null
 }
@@ -137,9 +137,9 @@ function Puzzle() {
   let navigate = useNavigate()
   let params = useParams()
 
-  const cipher = rot13.encrypt('rates')
+  const cipher = Encrypt('rates', cipherKey)
   console.log(cipher)
-  const decipheredAnswer = rot13.decrypt(params.answerXor).toLowerCase()
+  const decipheredAnswer = Encrypt(params.answerXor, cipherKey, true).toLowerCase()
   console.log('deciphered text: ' + decipheredAnswer)
 
   useEffect(() => {
@@ -359,7 +359,7 @@ function Puzzle() {
         onClick={() => {
           const newAnswer = getRandomAnswer()
           setAnswer(newAnswer)
-          navigate('/' + rot13.encrypt(newAnswer))
+          navigate('/' + Encrypt(newAnswer, cipherKey))
           setGameState(initialStates.gameState)
           setBoard(initialStates.board)
           setCellStatuses(initialStates.cellStatuses)
@@ -389,7 +389,9 @@ function Puzzle() {
         onClick={() => {
           setButtonPressed(true)
           navigator.clipboard.writeText(
-            `cmot17.github.io/word-master#/${rot13.encrypt(answer)} ${currentRow}/6\n\n` +
+            `https://cmot17.github.io/word-master#/${Encrypt(answer, cipherKey)} ${
+              gameState === state.won ? currentRow : 'X'
+            }/6\n\n` +
               cellStatuses
                 .map((row) => {
                   if (row.every((item) => item !== status.unguessed)) {
