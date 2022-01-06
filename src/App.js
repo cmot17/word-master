@@ -389,7 +389,7 @@ function Puzzle() {
         onClick={() => {
           setButtonPressed(true)
           navigator.clipboard.writeText(
-            `cmot17.github.io/word-master/${rot13.encrypt(answer)} ${currentRow}/6\n\n` +
+            `cmot17.github.io/word-master#/${rot13.encrypt(answer)} ${currentRow}/6\n\n` +
               cellStatuses
                 .map((row) => {
                   if (row.every((item) => item !== status.unguessed)) {
