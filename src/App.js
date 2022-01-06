@@ -1,4 +1,6 @@
 import { useEffect, useState, useRef } from 'react'
+import { Routes, Route, Outlet, useParams, useNavigate } from 'react-router-dom'
+import { rot13 } from 'simple-cipher-js'
 import { letters, status } from './constants'
 import { Keyboard } from './Keyboard'
 import answers from './data/answers'
@@ -25,8 +27,129 @@ const getRandomAnswer = () => {
 }
 
 function App() {
+  return (
+    <Routes>
+      <Route path="word-master" element={<Layout />}>
+        <Route index element={<RandomPuzzle />} />
+        <Route path=":answerXor" element={<Puzzle />} />
+        <Route
+          path="404"
+          element={
+            <h1 className="flex-1 text-center text-xl xxs:text-2xl -mr-6 sm:text-4xl tracking-wide font-bold">
+              Invalid URL!
+            </h1>
+          }
+        />
+      </Route>
+    </Routes>
+  )
+}
+
+function Layout() {
+  const [firstTime, setFirstTime] = useLocalStorage('first-time', true)
+  const [infoModalIsOpen, setInfoModalIsOpen] = useState(firstTime)
+
+  const handleInfoClose = () => {
+    setFirstTime(false)
+    setInfoModalIsOpen(false)
+  }
+
+  return (
+    <div className="flex flex-col justify-between h-fill bg-background">
+      <header className="flex items-center py-2 px-3 text-primary">
+        <h1 className="flex-1 text-center text-xl xxs:text-2xl -mr-6 sm:text-4xl tracking-wide font-bold font-righteous">
+          WORD MASTER
+        </h1>
+        <button type="button" onClick={() => setInfoModalIsOpen(true)}>
+          <Info />
+        </button>
+      </header>
+      <Outlet />
+      <Modal
+        isOpen={infoModalIsOpen}
+        onRequestClose={handleInfoClose}
+        style={customStyles}
+        contentLabel="Game Info Modal"
+      >
+        <button
+          className="absolute top-4 right-4 rounded-full nm-flat-background text-primary p-1 w-6 h-6 sm:p-2 sm:h-8 sm:w-8"
+          onClick={handleInfoClose}
+        >
+          <Close />
+        </button>
+        <div className="h-full flex flex-col items-center justify-center max-w-[390px] mx-auto pt-9 text-primary">
+          <div className="flex-1 w-full border sm:text-base text-sm">
+            <h1 className="text-center sm:text-3xl text-2xl">How to play</h1>
+            <ul className="list-disc pl-5 block sm:text-base text-sm">
+              <li className="mt-6 mb-2">You have 6 guesses to guess the correct word.</li>
+              <li className="mb-2">You can guess any valid word.</li>
+              <li className="mb-2">
+                After each guess, each letter will turn green, yellow, or gray.
+              </li>
+            </ul>
+            <div className="mb-3 mt-8 flex items-center">
+              <span className="nm-inset-n-green text-gray-50 inline-flex items-center justify-center text-3x w-10 h-10 rounded-full">
+                W
+              </span>
+              <span className="mx-2">=</span>
+              <span>Correct letter, correct spot</span>
+            </div>
+            <div className="mb-3">
+              <span className="nm-inset-yellow-500 text-gray-50 inline-flex items-center justify-center text-3x w-10 h-10 rounded-full">
+                W
+              </span>
+              <span className="mx-2">=</span>
+              <span>Correct letter, wrong spot</span>
+            </div>
+            <span className="nm-inset-n-gray text-gray-50 inline-flex items-center justify-center text-3x w-10 h-10 rounded-full">
+              W
+            </span>
+            <span className="mx-2">=</span>
+            <span>Wrong letter</span>
+          </div>
+          <div className="flex justify-center sm:text-base text-sm">
+            <span>This project is open source on</span>
+            <a
+              className="ml-[6px] rounded-full h-5 w-5 sm:h-6 sm:w-6"
+              href="https://github.com/octokatherine/word-master"
+              target="_blank"
+              rel="noreferrer"
+            >
+              <Github />
+            </a>
+          </div>
+        </div>
+      </Modal>
+    </div>
+  )
+}
+
+function RandomPuzzle() {
+  let navigate = useNavigate()
+  let answer = getRandomAnswer()
+  useEffect(() => {
+    navigate('/word-master/' + rot13.encrypt(answer))
+  })
+  return null
+}
+
+function Puzzle() {
+  let navigate = useNavigate()
+  let params = useParams()
+
+  const cipher = rot13.encrypt('rates')
+  console.log(cipher)
+  const decipheredAnswer = rot13.decrypt(params.answerXor).toLowerCase()
+  console.log('deciphered text: ' + decipheredAnswer)
+
+  useEffect(() => {
+    if (!answers.includes(decipheredAnswer)) {
+      navigate('/word-master/404')
+    }
+  })
+
   const initialStates = {
-    answer: () => getRandomAnswer(),
+    answer: decipheredAnswer.toUpperCase(),
     gameState: state.playing,
     board: [
       ['', '', '', '', ''],
@@ -47,6 +170,7 @@ function App() {
       return letterStatuses
     },
   }
+
   const [answer, setAnswer] = useState(initialStates.answer)
   const [gameState, setGameState] = useState(initialStates.gameState)
   const [board, setBoard] = useState(initialStates.board)
@@ -59,15 +183,9 @@ function App() {
   const [longestStreak, setLongestStreak] = useLocalStorage('longest-streak', 0)
   const streakUpdated = useRef(false)
   const [modalIsOpen, setIsOpen] = useState(false)
-  const [firstTime, setFirstTime] = useLocalStorage('first-time', true)
-  const [infoModalIsOpen, setInfoModalIsOpen] = useState(firstTime)
 
   const openModal = () => setIsOpen(true)
   const closeModal = () => setIsOpen(false)
-  const handleInfoClose = () => {
-    setFirstTime(false)
-    setInfoModalIsOpen(false)
-  }
 
   useEffect(() => {
     if (gameState !== state.playing) {
@@ -233,12 +351,15 @@ function App() {
   }
 
   const PlayAgainButton = () => {
+    let navigate = useNavigate()
     return (
       <button
         type="button"
         className="rounded-lg w-36 px-6 py-2 mt-8 text-lg nm-flat-background hover:nm-inset-background"
         onClick={() => {
-          setAnswer(initialStates.answer)
+          const newAnswer = getRandomAnswer()
+          setAnswer(newAnswer)
+          navigate('/word-master/' + rot13.encrypt(newAnswer))
           setGameState(initialStates.gameState)
           setBoard(initialStates.board)
           setCellStatuses(initialStates.cellStatuses)
@@ -254,7 +375,7 @@ function App() {
     )
   }
 
-  const ShareButton = (props) => {
+  const ShareButton = () => {
     const [buttonPressed, setButtonPressed] = useState(false)
     useEffect(() => {
       if (buttonPressed !== false) {
@@ -268,7 +389,7 @@ function App() {
         onClick={() => {
           setButtonPressed(true)
           navigator.clipboard.writeText(
-            `Word Master ${currentRow}/6\n\n` +
+            `cmot17.github.io/word-master/${rot13.encrypt(answer)} ${currentRow}/6\n\n` +
               cellStatuses
                 .map((row) => {
                   if (row.every((item) => item !== status.unguessed)) {
@@ -302,33 +423,7 @@ function App() {
   }
 
   return (
-    <div className="flex flex-col justify-between h-fill bg-background">
-      <header className="flex items-center py-2 px-3 text-primary">
-        <h1 className="flex-1 text-center text-xl xxs:text-2xl -mr-6 sm:text-4xl tracking-wide font-bold font-righteous">
-          WORD MASTER
-        </h1>
-        <button type="button" onClick={() => setInfoModalIsOpen(true)}>
-          <Info />
-        </button>
-      </header>
-      <div className="flex items-center flex-col py-3">
-        <div className="grid grid-cols-5 grid-flow-row gap-4">
-          {board.map((row, rowNumber) =>
-            row.map((letter, colNumber) => (
-              <span
-                key={colNumber}
-                className={`${getCellStyles(
-                  rowNumber,
-                  colNumber,
-                  letter
-                )} inline-flex items-center justify-center text-lg w-[14vw] h-[14vw] xs:w-14 xs:h-14 sm:w-20 sm:h-20 rounded-full`}
-              >
-                {letter}
-              </span>
-            ))
-          )}
-        </div>
-      </div>
+    <>
       <Modal
         isOpen={modalIsOpen}
         onRequestClose={closeModal}
@@ -337,7 +432,7 @@ function App() {
       >
         <div className="h-full flex flex-col items-center justify-center max-w-[300px] mx-auto">
           {gameState === state.won && (
-            <>
+            <strong>
               <img src={Success} alt="success" height="auto" width="auto" />
               <h1 className="text-primary text-3xl">Congrats!</h1>
               <p className="mt-6">
@@ -346,7 +441,7 @@ function App() {
               <p>
                 Longest streak: <strong>{longestStreak}</strong>
               </p>
-            </>
+            </strong>
           )}
           {gameState === state.lost && (
             <>
@@ -369,6 +464,24 @@ function App() {
           <ShareButton />
         </div>
       </Modal>
+      <div className="flex items-center flex-col py-3">
+        <div className="grid grid-cols-5 grid-flow-row gap-4">
+          {board.map((row, rowNumber) =>
+            row.map((letter, colNumber) => (
+              <span
+                key={colNumber}
+                className={`${getCellStyles(
+                  rowNumber,
+                  colNumber,
+                  letter
+                )} inline-flex items-center justify-center text-lg w-[14vw] h-[14vw] xs:w-14 xs:h-14 sm:w-20 sm:h-20 rounded-full`}
+              >
+                {letter}
+              </span>
+            ))
+          )}
+        </div>
+      </div>
       <Keyboard
         letterStatuses={letterStatuses}
         addLetter={addLetter}
@@ -376,62 +489,7 @@ function App() {
         onDeletePress={onDeletePress}
         gameDisabled={gameState !== state.playing}
       />
-      <Modal
-        isOpen={infoModalIsOpen}
-        onRequestClose={handleInfoClose}
-        style={customStyles}
-        contentLabel="Game Info Modal"
-      >
-        <button
-          className="absolute top-4 right-4 rounded-full nm-flat-background text-primary p-1 w-6 h-6 sm:p-2 sm:h-8 sm:w-8"
-          onClick={handleInfoClose}
-        >
-          <Close />
-        </button>
-        <div className="h-full flex flex-col items-center justify-center max-w-[390px] mx-auto pt-9 text-primary">
-          <div className="flex-1 w-full border sm:text-base text-sm">
-            <h1 className="text-center sm:text-3xl text-2xl">How to play</h1>
-            <ul className="list-disc pl-5 block sm:text-base text-sm">
-              <li className="mt-6 mb-2">You have 6 guesses to guess the correct word.</li>
-              <li className="mb-2">You can guess any valid word.</li>
-              <li className="mb-2">
-                After each guess, each letter will turn green, yellow, or gray.
-              </li>
-            </ul>
-            <div className="mb-3 mt-8 flex items-center">
-              <span className="nm-inset-n-green text-gray-50 inline-flex items-center justify-center text-3x w-10 h-10 rounded-full">
-                W
-              </span>
-              <span className="mx-2">=</span>
-              <span>Correct letter, correct spot</span>
-            </div>
-            <div className="mb-3">
-              <span className="nm-inset-yellow-500 text-gray-50 inline-flex items-center justify-center text-3x w-10 h-10 rounded-full">
-                W
-              </span>
-              <span className="mx-2">=</span>
-              <span>Correct letter, wrong spot</span>
-            </div>
-            <span className="nm-inset-n-gray text-gray-50 inline-flex items-center justify-center text-3x w-10 h-10 rounded-full">
-              W
-            </span>
-            <span className="mx-2">=</span>
-            <span>Wrong letter</span>
-          </div>
-          <div className="flex justify-center sm:text-base text-sm">
-            <span>This project is open source on</span>
-            <a
-              className="ml-[6px] rounded-full h-5 w-5 sm:h-6 sm:w-6"
-              href="https://github.com/octokatherine/word-master"
-              target="_blank"
-              rel="noreferrer"
-            >
-              <Github />
-            </a>
-          </div>
-        </div>
-      </Modal>
-    </div>
+    </>
   )
 }
 
