@@ -29,9 +29,9 @@ const getRandomAnswer = () => {
 function App() {
   return (
     <Routes>
-      <Route path="/word-master" element={<Layout />}>
+      <Route path="/" element={<Layout />}>
         <Route index element={<RandomPuzzle />} />
-        <Route path="/word-master/:answerXor" element={<Puzzle />} />
+        <Route path=":answerXor" element={<Puzzle />} />
         <Route
           path="404"
           element={
@@ -128,7 +128,7 @@ function RandomPuzzle() {
   let navigate = useNavigate()
   let answer = getRandomAnswer()
   useEffect(() => {
-    navigate('/word-master/' + rot13.encrypt(answer))
+    navigate('/' + rot13.encrypt(answer))
   })
   return null
 }
@@ -144,7 +144,7 @@ function Puzzle() {
 
   useEffect(() => {
     if (!answers.includes(decipheredAnswer)) {
-      navigate('/word-master/404')
+      navigate('/404')
     }
   })
 
@@ -359,7 +359,7 @@ function Puzzle() {
         onClick={() => {
           const newAnswer = getRandomAnswer()
           setAnswer(newAnswer)
-          navigate('/word-master/' + rot13.encrypt(newAnswer))
+          navigate('/' + rot13.encrypt(newAnswer))
           setGameState(initialStates.gameState)
           setBoard(initialStates.board)
           setCellStatuses(initialStates.cellStatuses)
