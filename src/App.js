@@ -434,7 +434,7 @@ function Puzzle() {
       >
         <div className="h-full flex flex-col items-center justify-center max-w-[300px] mx-auto">
           {gameState === state.won && (
-            <strong>
+            <>
               <img src={Success} alt="success" height="auto" width="auto" />
               <h1 className="text-primary text-3xl">Congrats!</h1>
               <p className="mt-6">
@@ -443,7 +443,7 @@ function Puzzle() {
               <p>
                 Longest streak: <strong>{longestStreak}</strong>
               </p>
-            </strong>
+            </>
           )}
           {gameState === state.lost && (
             <>
