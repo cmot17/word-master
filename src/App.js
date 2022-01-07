@@ -389,7 +389,7 @@ function Puzzle() {
         onClick={() => {
           setButtonPressed(true)
           navigator.clipboard.writeText(
-            `https://cmot17.github.io/word-master#/${Encrypt(answer, cipherKey)} ${
+            `https://cmot17.github.io/word-master/#/${Encrypt(answer, cipherKey)} ${
               gameState === state.won ? currentRow : 'X'
             }/6\n\n` +
               cellStatuses
